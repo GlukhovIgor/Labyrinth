@@ -1,4 +1,6 @@
 #include <iostream>
+#include <cstring>
+#include <string>
 #include <stdlib.h>
 #include <conio.h>
 #include <ctime>
@@ -6,56 +8,50 @@
 using namespace std;
 const int y = system( "color F0" );
 
-void printArray(char*, int, int);
+void printArray(char*, int, int, int&);
 void Player_move(char*,int, int, int, int&, int&, int&, bool&);
 void Reset_variables(char*, int, int, int &, int &, int&, int&, int&);
 int ind(int, int, int);
-void Get_size(int&, int&);
+void Get_size(int&, int&, string&);
 void Restart(char*, int, int, int &, int &, int&, int&, int&, bool&);
-void Get_map(char*, int, int);
+void Get_map(char*, int, int, string&);
 void Game_start(bool&, int&);
+void Wall_hit(int&, int&);
+void Game_completed(char*, int, int, int &, int &, int&, int&, int&, int&, bool&);
+void Game_failed(char*, int, int, int &, int &, int&, int&, int&, bool&);
 
 int main()
 {   int r, c;
-    Get_size(r, c);
+    string s1;
+    Get_size(r, c, s1);
     char a[r][c];
-    Get_map(&a[0][0], r, c);
+    Get_map(&a[0][0], r, c, s1);
     a[0][1]='@';
     int x=1, y=0, old_lifes=3, lifes=3, start_time, finish_time;
     bool game;
     cout<< "Labyrith 0.0.1 \n Press 1 to start the game"<< endl;
     Game_start(game, start_time);
     while(game){
-
-        system("cls");    //î÷èñòêà ıêğàíà
-        cout<<"lifes: "<<lifes<<endl;
-        printArray(&a[0][0], r, c);
-
-        if(lifes==old_lifes-1 and lifes!=0){    //óäàğ â ñòåíó
-            old_lifes=lifes;
-            cout<<"OOPS, can't go there";
+        system("cls");    //Ğ¾Ñ‡Ğ¸ÑÑ‚ĞºĞ° ÑĞºÑ€Ğ°Ğ½Ğ°
+        printArray(&a[0][0], r, c, lifes); //Ğ’Ñ‹Ğ²Ğ¾Ğ´ ĞºĞ°Ñ€Ñ‚Ñ‹ Ğ¸ Ğ¶Ğ¸Ğ·Ğ½ĞµĞ¹
+        if(lifes==old_lifes-1 and lifes!=0){    //ÑƒĞ´Ğ°Ñ€ Ğ² ÑÑ‚ĞµĞ½Ñƒ
+            Wall_hit(lifes, old_lifes);
         }
-        int step = _getch();
+        int step = _getch();    //Ğ½Ğ°Ğ¶Ğ°Ñ‚Ğ¸Ğµ Ğ¸Ğ³Ñ€Ğ¾ĞºĞ¾Ğ¼ ĞºĞ½Ğ¾Ğ¿ĞºĞ¸
         Player_move(&a[0][0], r, c, step, y, x, lifes, game);
-
-        if(x==c-1 and y==r-1){    //èãğà ïğîéäåíà
-            system("cls");
-            finish_time=clock();
-            cout<<"Game completed! \n lifes remaining: "<<lifes<<"\n Time spent: "<<(finish_time - start_time)/1000<<"."<<(finish_time - start_time)%1000/100<<(finish_time - start_time)%1000/10%10 <<"\n Do you wish to restart? Press 1 for Yes, press anything else for no"<<endl;
-            Restart(&a[0][0], r, c, y, x, old_lifes, lifes, start_time, game);
+        if(x==c-1 and y==r-1){    //Ğ¸Ğ³Ñ€Ğ° Ğ¿Ñ€Ğ¾Ğ¹Ğ´ĞµĞ½Ğ°
+            Game_completed(&a[0][0], r, c, y, x, old_lifes, lifes, start_time, finish_time, game);
         }
-        if(lifes==0){   //ïğîèãğûø
-            system("cls");
-            cout<<"Game over \n Do you wish to restart? Press 1 for Yes, press anything else for no"<<endl;
-            Restart(&a[0][0], r, c, y, x, old_lifes, lifes, start_time, game);
+        if(lifes==0){   //Ğ¿Ñ€Ğ¾Ğ¸Ğ³Ñ€Ñ‹Ñˆ
+            Game_failed(&a[0][0], r, c, y, x, old_lifes, lifes, start_time, game);
         }
 
     }
-
     return 0;
 }
-void printArray(char* arr, int rows, int columns){
-        for(int i=0; i<rows; i++){    //îòğèñîâêà ëàáèğèíòà
+void printArray(char* arr, int rows, int columns, int&lifes){
+        cout<<"lifes: "<<lifes<<endl;
+        for(int i=0; i<rows; i++){    //Ğ¾Ñ‚Ñ€Ğ¸ÑĞ¾Ğ²ĞºĞ° Ğ»Ğ°Ğ±Ğ¸Ñ€Ğ¸Ğ½Ñ‚Ğ°
             for(int j=0; j<columns; j++){
                 cout<<arr[ind(i, j, columns)]<<" ";
             }
@@ -64,7 +60,7 @@ void printArray(char* arr, int rows, int columns){
 }
 void Player_move(char* a, int r, int c, int step, int &y, int &x, int &lifes, bool &game){
     switch(step){
-        case('w'):      //øàã ââåğõ
+        case('w'):      //ÑˆĞ°Ğ³ Ğ²Ğ²ĞµÑ€Ñ…
             {
                 if(a[ind(y-1, x, c)]=='.'){
                     swap(a[ind(y,x,c)], a[ind(y-1, x, c)]);
@@ -80,7 +76,7 @@ void Player_move(char* a, int r, int c, int step, int &y, int &x, int &lifes, bo
                 }
             }
             break;
-        case('a'):      //øàã âëåâî
+        case('a'):      //ÑˆĞ°Ğ³ Ğ²Ğ»ĞµĞ²Ğ¾
             {
                 if(a[ind(y, x-1, c)]=='.' and x>0){
                     swap(a[ind(y,x,c)], a[ind(y, x-1, c)]);
@@ -96,7 +92,7 @@ void Player_move(char* a, int r, int c, int step, int &y, int &x, int &lifes, bo
                 }
             }
             break;
-        case('d'):      //øàã âïğàâî
+        case('d'):      //ÑˆĞ°Ğ³ Ğ²Ğ¿Ñ€Ğ°Ğ²Ğ¾
             {
                 if(a[ind(y, x+1, c)]=='.' and x<c-1){
                     swap(a[ind(y,x,c)], a[ind(y, x+1, c)]);
@@ -112,7 +108,7 @@ void Player_move(char* a, int r, int c, int step, int &y, int &x, int &lifes, bo
                 }
             }
             break;
-        case('s'):      //øàã âíèç
+        case('s'):      //ÑˆĞ°Ğ³ Ğ²Ğ½Ğ¸Ğ·
             {
                 if(a[ind(y+1, x, c)]=='.' and y<r-1){
                     swap(a[ind(y,x,c)], a[ind(y+1, x, c)]);
@@ -133,7 +129,7 @@ void Player_move(char* a, int r, int c, int step, int &y, int &x, int &lifes, bo
             {
                 cout<<"\n Do you want to exit the game? \n Press 1 for YES, Press anything else for NO"<<endl;
                 if(_getch()=='1'){
-                    game=false;     //âûõîä ïğè íàæàòèè ëşáîé äğóãîé êëàâèøè
+                    game=false;     //Ğ²Ñ‹Ñ…Ğ¾Ğ´ Ğ¿Ñ€Ğ¸ Ğ½Ğ°Ğ¶Ğ°Ñ‚Ğ¸Ğ¸ Ğ»ÑĞ±Ğ¾Ğ¹ Ğ´Ñ€ÑƒĞ³Ğ¾Ğ¹ ĞºĞ»Ğ°Ğ²Ğ¸ÑˆĞ¸
                 }
 
             }
@@ -151,16 +147,34 @@ void Reset_variables(char* a, int r, int c, int &y, int &x, int &old_lifes, int 
 int ind(int i, int j, int columns){
     return i*columns + j;
 }
-void Get_size(int& r, int& c){
-    ifstream f_in("inp.txt");
-    char temp, symbol;  //ñ÷èòûâàåì ñèìâîëû â ïóñòîòó
+void Get_size(int& r, int& c, string& s1){
+    cout<< "Do you wish to use default map?(You cannot change it afterwards) \nPress 1 for Yes, press anything else for no"<< endl;
+    if(_getch()=='1'){
+        s1 = "inp.txt";
+    }
+    else{
+        cout << "Choose map from the list below and type it \n1: m1.txt \n2: m2.txt" <<endl;
+        cin >> s1;
+    }
+    while (true){
+        ifstream f_in(s1);
+        if (f_in.is_open()){
+            cout << "Map is loaded" << endl;
+        break;
+        }
+        else{
+            cout << "Map with such name does not exist" << endl;
+        }
+    }
+    ifstream f_in(s1);
+    char temp, symbol;  //ÑÑ‡Ğ¸Ñ‚Ñ‹Ğ²Ğ°ĞµĞ¼ ÑĞ¸Ğ¼Ğ²Ğ¾Ğ»Ñ‹ Ğ² Ğ¿ÑƒÑÑ‚Ğ¾Ñ‚Ñƒ
     int counter=0, space_counter=0;
     while(!f_in.eof()){
         f_in.get(symbol);
         if(symbol==' '){
-            space_counter++;       //ñ÷èòàåì ïğîáåëû â ñòğîêå
+            space_counter++;       //ÑÑ‡Ğ¸Ñ‚Ğ°ĞµĞ¼ Ğ¿Ñ€Ğ¾Ğ±ĞµĞ»Ñ‹ Ğ² ÑÑ‚Ñ€Ğ¾ĞºĞµ
         }
-        if(symbol=='\n'){       //âûõîäèì êîãäà äîøëè äî êîíöà ñòğîêå
+        if(symbol=='\n'){       //Ğ²Ñ‹Ñ…Ğ¾Ğ´Ğ¸Ğ¼ ĞºĞ¾Ğ³Ğ´Ğ° Ğ´Ğ¾ÑˆĞ»Ğ¸ Ğ´Ğ¾ ĞºĞ¾Ğ½Ñ†Ğ° ÑÑ‚Ñ€Ğ¾ĞºĞµ
             break;
         }
     }
@@ -182,8 +196,8 @@ void Restart(char* a, int r, int c, int &y, int &x, int &old_lifes, int &lifes, 
         game=false;
     }
 }
-void Get_map(char* a, int r, int c){
-    ifstream f_in("inp.txt");
+void Get_map(char* a, int r, int c, string& s1){
+    ifstream f_in(s1);
     for(int i=0; i<r; i++){
         for(int j=0; j<c; j++){
             f_in >> a[ind(i,j,c)];
@@ -191,11 +205,26 @@ void Get_map(char* a, int r, int c){
     }
 }
 void Game_start(bool& game, int& start_time){
-     if(_getch()== '1'){
+    if(_getch()== '1'){
         game = true;
         start_time=clock();
     }
     else{
         game = false;
     }
+}
+void Wall_hit(int& lifes, int& old_lifes){
+    old_lifes=lifes;
+    cout<<"OOPS, can't go there";
+}
+void Game_completed(char* a, int r, int c, int &y, int &x, int &old_lifes, int &lifes, int &start_time, int &finish_time, bool& game){
+    system("cls");
+    finish_time=clock();
+    cout<<"Game completed! \n lifes remaining: "<<lifes<<"\n Time spent: "<<(finish_time - start_time)/1000<<"."<<(finish_time - start_time)%1000/100<<(finish_time - start_time)%1000/10%10 <<"\n Do you wish to restart? Press 1 for Yes, press anything else for no"<<endl;
+    Restart(&a[0], r, c, y, x, old_lifes, lifes, start_time, game);
+}
+void Game_failed(char* a, int r, int c, int &y, int &x, int &old_lifes, int &lifes, int &start_time, bool& game){
+    system("cls");
+    cout<<"Game over \n Do you wish to restart? Press 1 for Yes, press anything else for no"<<endl;
+    Restart(&a[0], r, c, y, x, old_lifes, lifes, start_time, game);
 }
